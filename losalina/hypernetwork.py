@@ -65,9 +65,12 @@ def create_network(multiplier, *args, **kwargs):
     )
 
 
-def create_network_from_weights(multiplier, file, weights_sd=None, *args, **kwargs):
-    weights_sd = torch.load(file, map_location="cpu")
-    hypernetwork = create_network(multiplier)
+def create_network_from_weights(
+    multiplier, file, vae, text_encoder, unet, weights_sd=None, *args, **kwargs
+):
+    if weights_sd is None:
+        weights_sd = torch.load(file, map_location="cpu")
+    hypernetwork = Hypernetwork(multiplier)
     hypernetwork.load_from_state_dict(weights_sd)
     return hypernetwork
 
@@ -127,6 +130,7 @@ def init_dropout(layer_structure: List[int], last_layer_dropout: bool):
     if last_layer_dropout:
         dropout_structure[-1] = 0.3
     return dropout_structure
+
 
 class HypernetworkModule(torch.nn.Module):
     def __init__(
@@ -201,7 +205,9 @@ class Hypernetwork(torch.nn.Module):
         self.last_layer_dropout = last_layer_dropout
 
         if self.dropout_structure is None:
-            self.dropout_structure = init_dropout(self.layer_structure, self.last_layer_dropout)
+            self.dropout_structure = init_dropout(
+                self.layer_structure, self.last_layer_dropout
+            )
 
         self.layers: Dict[int, Tuple[torch.nn.Module, torch.nn.Module]] = {}
         self.load_layers()
@@ -270,7 +276,9 @@ class Hypernetwork(torch.nn.Module):
         self.dropout_structure = state_dict.get("dropout_structure", None)
 
         if self.dropout_structure is None:
-            self.dropout_structure = init_dropout(self.layer_structure, self.last_layer_dropout)
+            self.dropout_structure = init_dropout(
+                self.layer_structure, self.last_layer_dropout
+            )
 
         return self
 
