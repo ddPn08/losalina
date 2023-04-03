@@ -316,7 +316,7 @@ class Hypernetwork(torch.nn.Module):
         return
 
     def prepare_optimizer_params(
-        self, text_encoder_lr: float, unet_lr: float, default_lr: float
+        self, *args, **kwargs
     ):
         return self.parameters()
 
