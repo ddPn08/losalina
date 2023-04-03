@@ -1,0 +1,3 @@
+# Losalina | Hypernetwork for kohya's sd-scripts
+
+Work in progress...
