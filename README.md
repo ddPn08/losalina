@@ -18,7 +18,7 @@ pip install .
 > Saving in `safetensors` format is not available.
 
 ```toml
-network_module = losalina.hypernetwork
+network_module = "losalina.hypernetwork"
 network_args = [
     "layer_structure=[1, 2, 2, 1]",
     "weight_init=KaimingNormal",
