@@ -265,6 +265,7 @@ class Hypernetwork(torch.nn.Module):
         state_dict["weight_initialization"] = self.weight_init
         state_dict["use_dropout"] = self.dropout_structure is not None
         state_dict["dropout_structure"] = self.dropout_structure
+        state_dict["activate_output"] = False
         return state_dict
 
     def load_metadata(self, state_dict: Dict[str, Any]):
@@ -315,9 +316,7 @@ class Hypernetwork(torch.nn.Module):
                                     attn.hypernetwork = None
         return
 
-    def prepare_optimizer_params(
-        self, *args, **kwargs
-    ):
+    def prepare_optimizer_params(self, *args, **kwargs):
         return self.parameters()
 
     def enable_gradient_checkpointing(self):
