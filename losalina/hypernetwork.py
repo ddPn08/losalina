@@ -1,3 +1,10 @@
+# Hypernetwork module
+#
+# References:
+# - https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/modules/hypernetworks/hypernetwork.py
+# - https://github.com/kohya-ss/sd-scripts/blob/main/finetune/hypernetwork_nai.py
+
+
 import os
 from typing import *
 import ast
