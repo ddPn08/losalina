@@ -46,7 +46,7 @@ network_args = [
 ||||
 |-|-|-|
 |`layer_structure`| Layer structure of hypernetwork.|ex.) `[1, 2, 2, 1]`|
-|`weight_init`| Weight initialization method. | `Normal`, `XavierUniform`, `XavierNormal`, `KaimingNormal` |
+|`weight_init`| Weight initialization method. | `Normal`, `XavierUniform`, `XavierNormal`, `KaimingUniform`, `KaimingNormal` |
 |`activation_func`| Activation function. | `linear`, `relu`, `leakyrelu`, `elu`, `swish`, `tahh`, `sigmoid` ... |
 |`add_layer_norm`| Add layer normalization. | `True`, `False` |
 |`dropout_structure`| Dropout structure. | ex.) `[0, 0.3, 0.3, 0]` |
