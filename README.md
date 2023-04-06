@@ -7,9 +7,7 @@ Train hypernetwork implemented in [stable-diffusion-webui](https://github.com/AU
 ## from GitHub
 
 ```
-git clone https://github.com/ddPn08/losalina.git
-cd losalina
-pip install .
+pip install git+https://github.com/ddPn08/losalina.git
 ```
 
 # How to use
