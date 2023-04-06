@@ -71,6 +71,9 @@ def create_network_from_weights(
     if weights_sd is None:
         weights_sd = torch.load(file, map_location="cpu")
     hypernetwork = Hypernetwork(multiplier)
+    hypernetwork.restore_layers()
+    hypernetwork.load_metadata(weights_sd)
+    hypernetwork.load_layers()
     hypernetwork.load_from_state_dict(weights_sd)
     return hypernetwork
 
@@ -275,6 +278,7 @@ class Hypernetwork(torch.nn.Module):
         self.add_layer_norm = state_dict.get("is_layer_norm", False)
         self.weight_init = state_dict.get("weight_initialization", "Normal")
         self.dropout_structure = state_dict.get("dropout_structure", None)
+        self.activate_output = state_dict.get("activate_output", False)
 
         if self.dropout_structure is None:
             self.dropout_structure = init_dropout(
@@ -336,10 +340,11 @@ class Hypernetwork(torch.nn.Module):
             raise ValueError("Hypernetwork weights should not be saved as safetensors.")
         state_dict = self.write_metadata(self.get_state_dict())
         if dtype is not None:
-            for layer in state_dict.values():
-                for i in range(len(layer)):
-                    for key in layer[i].keys():
-                        layer[i][key] = (
-                            layer[i][key].detach().clone().to("cpu").to(dtype)
-                        )
+            for size in state_dict.keys():
+                if size in self.enable_sizes:
+                    for module in state_dict[size]:
+                        for key in module.keys():
+                            module[key] = (
+                                module[key].detach().clone().to("cpu").to(dtype)
+                            )
         torch.save(state_dict, file)
