@@ -9,6 +9,7 @@ import os
 from typing import *
 import ast
 import inspect
+from typing import Any
 import torch
 from torch.nn.init import (
     normal_,
@@ -74,8 +75,17 @@ def create_network_from_weights(
     hypernetwork.restore_layers()
     hypernetwork.load_metadata(weights_sd)
     hypernetwork.load_layers()
-    hypernetwork.load_from_state_dict(weights_sd)
-    return hypernetwork
+
+    new_state_dict = {}
+    for size, sd in weights_sd.items():
+        if type(size) != int:
+            continue
+        for key, weights in enumerate(sd):
+            prefix = f"{size}_{key}."
+            for k, v in weights.items():
+                new_state_dict[prefix + k] = v
+
+    return hypernetwork, new_state_dict
 
 
 activation_dict = {
@@ -244,13 +254,6 @@ class Hypernetwork(torch.nn.Module):
         self.layers = {}
         self._modules = {}
 
-    def load_from_state_dict(self, state_dict: Dict[str, Any]):
-        for size, sd in state_dict.items():
-            if type(size) == int:
-                self.layers[size][0].load_state_dict(sd[0], strict=True)
-                self.layers[size][1].load_state_dict(sd[1], strict=True)
-        return
-
     def get_state_dict(self):
         state_dict = {}
         for _, size in enumerate(self.enable_sizes):
@@ -298,7 +301,7 @@ class Hypernetwork(torch.nn.Module):
         self.restore_layers()
         self.load_metadata(state_dict)
         self.load_layers()
-        self.load_from_state_dict(state_dict)
+        self.load_state_dict(state_dict)
         return True
 
     def apply_to(self, text_encoder, unet, train_text_encoder, train_unet):
@@ -318,7 +321,19 @@ class Hypernetwork(torch.nn.Module):
                                     attn.hypernetwork = self
                                 else:
                                     attn.hypernetwork = None
-        return
+
+    def restore(self, unet):
+        blocks = unet.down_blocks + [unet.mid_block] + unet.up_blocks
+        for block in blocks:
+            if hasattr(block, "attentions"):
+                for subblk in block.attentions:
+                    if "SpatialTransformer" in str(
+                        type(subblk)
+                    ) or "Transformer2DModel" in str(type(subblk)):
+                        for tf_block in subblk.transformer_blocks:
+                            for attn in [tf_block.attn1, tf_block.attn2]:
+                                if hasattr(attn, "hypernetwork"):
+                                    delattr(attn, "hypernetwork")
 
     def prepare_optimizer_params(self, *args, **kwargs):
         return self.parameters()
