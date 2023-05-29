@@ -304,7 +304,13 @@ class Hypernetwork(torch.nn.Module):
         self.load_state_dict(state_dict)
         return True
 
-    def apply_to(self, text_encoder, unet, train_text_encoder, train_unet):
+    def set_multiplier(self, multiplier: int):
+        self.multiplier = multiplier
+        for _, size in enumerate(self.enable_sizes):
+            self.layers[size][0].multiplier = multiplier
+            self.layers[size][1].multiplier = multiplier
+
+    def apply_to(self, text_encoder, unet, apply_text_encoder=True, apply_unet=True):
         blocks = unet.down_blocks + [unet.mid_block] + unet.up_blocks
         for block in blocks:
             if hasattr(block, "attentions"):
@@ -321,19 +327,25 @@ class Hypernetwork(torch.nn.Module):
                                     attn.hypernetwork = self
                                 else:
                                     attn.hypernetwork = None
+        setattr(unet, "__hypernetwork", True)
 
-    def restore(self, unet):
-        blocks = unet.down_blocks + [unet.mid_block] + unet.up_blocks
-        for block in blocks:
-            if hasattr(block, "attentions"):
-                for subblk in block.attentions:
-                    if "SpatialTransformer" in str(
-                        type(subblk)
-                    ) or "Transformer2DModel" in str(type(subblk)):
-                        for tf_block in subblk.transformer_blocks:
-                            for attn in [tf_block.attn1, tf_block.attn2]:
-                                if hasattr(attn, "hypernetwork"):
-                                    delattr(attn, "hypernetwork")
+    def restore(self, *modules):
+        for module in modules:
+            if hasattr(module, "__hypernetwork"):
+                delattr(module, "__hypernetwork")
+            else:
+                continue
+            blocks = module.down_blocks + [module.mid_block] + module.up_blocks
+            for block in blocks:
+                if hasattr(block, "attentions"):
+                    for subblk in block.attentions:
+                        if "SpatialTransformer" in str(
+                            type(subblk)
+                        ) or "Transformer2DModel" in str(type(subblk)):
+                            for tf_block in subblk.transformer_blocks:
+                                for attn in [tf_block.attn1, tf_block.attn2]:
+                                    if hasattr(attn, "hypernetwork"):
+                                        delattr(attn, "hypernetwork")
 
     def prepare_optimizer_params(self, *args, **kwargs):
         return self.parameters()
